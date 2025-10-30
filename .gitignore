@@ -1,0 +1,11 @@
+# Gradle
+.gradle/
+build/
+bin/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
