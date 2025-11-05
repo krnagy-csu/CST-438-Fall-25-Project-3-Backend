@@ -25,7 +25,7 @@ public class GoogleAuthController {
         deviceStates.remove("latest");
         deviceStates.put("latest", new OAuthState("WAITING", null, null, null));
         
-        String googleAuthUrl = "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/login/oauth2/code/google";        
+        String googleAuthUrl = "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/oauth2/authorization/google";        
         System.out.println("Generated OAuth URL: " + googleAuthUrl);
         
         Map<String, String> response = new HashMap<>();
