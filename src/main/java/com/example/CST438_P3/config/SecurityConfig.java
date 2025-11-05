@@ -41,69 +41,89 @@ public class SecurityConfig {
         return http.build();
     }
     @Bean
-    public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
-        return (request, response, authentication) -> {
-            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-            
-            String email = oAuth2User.getAttribute("email");
-            String name = oAuth2User.getAttribute("name");
-            String picture = oAuth2User.getAttribute("picture");
-            
-            // Try to get deviceId from session (stored when /start was called)
-            String deviceId = (String) request.getSession().getAttribute("deviceId");
-            
-            if (deviceId != null && deviceId.startsWith("device_")) {
-                // Mobile app - store JWT for polling
-                try {
-                    String jwt = jwtTokenProvider.generateToken(email);
-                    
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("email", email);
-                    userMap.put("name", name);
-                    userMap.put("picture", picture);
-                    userMap.put("id", email);
-                    
-                    OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
-                    googleAuthController.updateDeviceState(deviceId, successState);
-                    
-                    // Clear session
-                    request.getSession().removeAttribute("deviceId");
-                    
-                    // Show success page
-                    response.setContentType("text/html");
-                    response.getWriter().write(
-                        "<!DOCTYPE html>" +
-                        "<html>" +
-                        "<head><title>Success</title></head>" +
-                        "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                        "<h2 style='color: green;'>✅ Success!</h2>" +
-                        "<p>You have successfully signed in.</p>" +
-                        "<p>You can close this window and return to the app.</p>" +
-                        "<script>setTimeout(() => window.close(), 2000);</script>" +
-                        "</body>" +
-                        "</html>"
-                    );
-                } catch (Exception e) {
-                    OAuthState errorState = new OAuthState("ERROR", null, null, "Failed to generate token: " + e.getMessage());
-                    googleAuthController.updateDeviceState(deviceId, errorState);
-                    
-                    response.setContentType("text/html");
-                    response.getWriter().write(
-                        "<!DOCTYPE html>" +
-                        "<html>" +
-                        "<head><title>Error</title></head>" +
-                        "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                        "<h2 style='color: red;'>❌ Error</h2>" +
-                        "<p>Authentication failed. Please try again.</p>" +
-                        "<p>Error: " + e.getMessage() + "</p>" +
-                        "</body>" +
-                        "</html>"
-                    );
-                }
-            } else {
-                // Web browser - redirect to home
-                response.sendRedirect("/home");
+public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
+    return (request, response, authentication) -> {
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        
+        String email = oAuth2User.getAttribute("email");
+        String name = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
+        
+        // Get the original request URL to find deviceId
+        String referer = request.getHeader("Referer");
+        String deviceId = null;
+        
+        // Try to extract deviceId from referer URL
+        if (referer != null && referer.contains("state=device_")) {
+            int startIndex = referer.indexOf("state=device_");
+            if (startIndex != -1) {
+                int endIndex = referer.indexOf("&", startIndex);
+                if (endIndex == -1) endIndex = referer.length();
+                deviceId = referer.substring(startIndex + 6, endIndex); // "state=".length() = 6
             }
-        };
-    }
+        }
+        
+        // Also check session as fallback
+        if (deviceId == null) {
+            deviceId = (String) request.getSession().getAttribute("deviceId");
+        }
+        
+        if (deviceId != null && deviceId.startsWith("device_")) {
+            // Mobile app - store JWT for polling
+            try {
+                String jwt = jwtTokenProvider.generateToken(email);
+                
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("email", email);
+                userMap.put("name", name);
+                userMap.put("picture", picture);
+                userMap.put("id", email);
+                
+                OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
+                googleAuthController.updateDeviceState(deviceId, successState);
+                
+                // Clear session
+                request.getSession().removeAttribute("deviceId");
+                
+                // Show success page
+                response.setContentType("text/html");
+                response.getWriter().write(
+                    "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head><title>Success</title></head>" +
+                    "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
+                    "<h2 style='color: green;'>✅ Success!</h2>" +
+                    "<p>You have successfully signed in as " + email + "</p>" +
+                    "<p>DeviceID: " + deviceId + "</p>" +
+                    "<p>You can close this window and return to the app.</p>" +
+                    "<script>setTimeout(() => window.close(), 2000);</script>" +
+                    "</body>" +
+                    "</html>"
+                );
+                return; // Important: return here to prevent redirect
+            } catch (Exception e) {
+                OAuthState errorState = new OAuthState("ERROR", null, null, "Failed to generate token: " + e.getMessage());
+                googleAuthController.updateDeviceState(deviceId, errorState);
+                
+                response.setContentType("text/html");
+                response.getWriter().write(
+                    "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head><title>Error</title></head>" +
+                    "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
+                    "<h2 style='color: red;'>❌ Error</h2>" +
+                    "<p>Authentication failed. Please try again.</p>" +
+                    "<p>Error: " + e.getMessage() + "</p>" +
+                    "</body>" +
+                    "</html>"
+                );
+                return;
+            }
+        }
+        
+        // Web browser - redirect to home
+        response.sendRedirect("/home");
+    };
 }
+}
+    
