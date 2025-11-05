@@ -4,6 +4,7 @@ import com.example.CST438_P3.model.OAuthState;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,9 +22,12 @@ public class GoogleAuthController {
     private final Map<String, OAuthState> deviceStates = new ConcurrentHashMap<>();
 
     @GetMapping("/start")
-    public ResponseEntity<?> startGoogleAuth(@RequestParam String deviceId) {
+    public ResponseEntity<?> startGoogleAuth(@RequestParam String deviceId, HttpSession session) {
         // Mark device as waiting
         deviceStates.put(deviceId, new OAuthState("WAITING", null, null, null));
+
+        // Store deviceId in session so we can retrieve it after OAuth callback
+        session.setAttribute("deviceId", deviceId);
         
         // Return Google OAuth URL with state parameter
         String googleAuthUrl = backendUrl + "/oauth2/authorization/google?state=" + deviceId;
