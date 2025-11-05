@@ -67,7 +67,7 @@ public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
             );
             
             // Deep link back to the app
-            String deepLink = "myapp://auth/callback?token=" + jwt + "&user=" + userData;
+            String deepLink = "project3frontend://auth/callback?token=" + jwt + "&user=" + userData;
             
             System.out.println("✅ Redirecting to: " + deepLink);
             
