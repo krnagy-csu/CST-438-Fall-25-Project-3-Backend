@@ -57,39 +57,48 @@ public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
             // Generate JWT
             String jwt = jwtTokenProvider.generateToken(email);
             
-            // Build user data as JSON (URL encoded)
-            String userData = java.net.URLEncoder.encode(
-                String.format("{\"email\":\"%s\",\"name\":\"%s\",\"picture\":\"%s\"}", 
-                    email, 
-                    name != null ? name : "", 
-                    picture != null ? picture : ""),
-                "UTF-8"
-            );
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("email", email);
+            userMap.put("name", name);
+            userMap.put("picture", picture);
+            userMap.put("id", email);
             
-            // Deep link back to the app
-            String deepLink = "project3frontend://auth/callback?token=" + jwt + "&user=" + userData;
+            OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
             
-            System.out.println("✅ Redirecting to: " + deepLink);
+            // Store with a special "latest" key that the frontend will poll
+            googleAuthController.updateDeviceState("latest", successState);
             
-            response.sendRedirect(deepLink);
+            System.out.println("✅ Stored SUCCESS state");
             
-        } catch (Exception e) {
-            System.out.println("❌ Error: " + e.getMessage());
-            e.printStackTrace();
-            
-            // Fallback to web redirect
+            // Show success page
             response.setContentType("text/html");
             response.getWriter().write(
                 "<!DOCTYPE html>" +
                 "<html>" +
-                "<head><title>Error</title></head>" +
+                "<head>" +
+                "<title>Success</title>" +
+                "<meta http-equiv='refresh' content='2;url=about:blank'>" +
+                "</head>" +
                 "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                "<h2 style='color: red;'>❌ Error</h2>" +
-                "<p>Authentication failed. Please try again.</p>" +
-                "<p>Error: " + e.getMessage() + "</p>" +
+                "<h2 style='color: green;'>✅ Success!</h2>" +
+                "<p>You have successfully signed in as " + email + "</p>" +
+                "<p><strong>You can close this window and return to the app.</strong></p>" +
+                "<p style='color: gray; font-size: 12px;'>This window will close automatically...</p>" +
+                "<script>" +
+                "setTimeout(() => { " +
+                "  try { window.close(); } catch(e) { " +
+                "    document.body.innerHTML = '<h2>Please close this window manually</h2>'; " +
+                "  }" +
+                "}, 2000);" +
+                "</script>" +
                 "</body>" +
                 "</html>"
             );
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect("/home");
         }
     };
 }
