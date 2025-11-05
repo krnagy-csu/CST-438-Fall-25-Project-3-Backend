@@ -42,81 +42,55 @@ public class SecurityConfig {
         return http.build();
     }
     @Bean
-    public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
-        return (request, response, authentication) -> {
-            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
+    return (request, response, authentication) -> {
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        
+        String email = oAuth2User.getAttribute("email");
+        String name = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
+        
+        System.out.println("=== OAuth Success ===");
+        System.out.println("Email: " + email);
+        
+        try {
+            // Generate JWT
+            String jwt = jwtTokenProvider.generateToken(email);
             
-            String email = oAuth2User.getAttribute("email");
-            String name = oAuth2User.getAttribute("name");
-            String picture = oAuth2User.getAttribute("picture");
+            // Build user data as JSON (URL encoded)
+            String userData = java.net.URLEncoder.encode(
+                String.format("{\"email\":\"%s\",\"name\":\"%s\",\"picture\":\"%s\"}", 
+                    email, 
+                    name != null ? name : "", 
+                    picture != null ? picture : ""),
+                "UTF-8"
+            );
             
-            System.out.println("=== OAuth Success Handler ===");
-            System.out.println("Email: " + email);
+            // Deep link back to the app
+            String deepLink = "myapp://auth/callback?token=" + jwt + "&user=" + userData;
             
-            // Try to find deviceId using the controller's method
-            HttpSession session = request.getSession(false);
-            String deviceId = googleAuthController.findDeviceIdFromSession(session);
+            System.out.println("✅ Redirecting to: " + deepLink);
             
-            System.out.println("Found deviceId: " + deviceId);
+            response.sendRedirect(deepLink);
             
-            if (deviceId != null && deviceId.startsWith("device_")) {
-                // Mobile app logic (same as before)
-                try {
-                    String jwt = jwtTokenProvider.generateToken(email);
-                    
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("email", email);
-                    userMap.put("name", name);
-                    userMap.put("picture", picture);
-                    userMap.put("id", email);
-                    
-                    OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
-                    googleAuthController.updateDeviceState(deviceId, successState);
-                    
-                    System.out.println("Stored SUCCESS state for deviceId: " + deviceId);
-                    
-                    if (session != null) {
-                        session.removeAttribute("deviceId");
-                    }
-                    
-                    response.setContentType("text/html");
-                    response.getWriter().write(
-                        "<!DOCTYPE html>" +
-                        "<html>" +
-                        "<head><title>Success</title></head>" +
-                        "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                        "<h2 style='color: green;'>✅ Success!</h2>" +
-                        "<p>You have successfully signed in as " + email + "</p>" +
-                        "<p><strong>You can close this window and return to the app.</strong></p>" +
-                        "<script>setTimeout(() => { window.close(); }, 2000);</script>" +
-                        "</body>" +
-                        "</html>"
-                    );
-                    return;
-                } catch (Exception e) {
-                    System.out.println("Error: " + e.getMessage());
-                    e.printStackTrace();
-                    
-                    OAuthState errorState = new OAuthState("ERROR", null, null, e.getMessage());
-                    googleAuthController.updateDeviceState(deviceId, errorState);
-                    
-                    response.setContentType("text/html");
-                    response.getWriter().write(
-                        "<!DOCTYPE html>" +
-                        "<html>" +
-                        "<head><title>Error</title></head>" +
-                        "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
-                        "<h2 style='color: red;'>❌ Error</h2>" +
-                        "<p>Error: " + e.getMessage() + "</p>" +
-                        "</body>" +
-                        "</html>"
-                    );
-                    return;
-                }
-            }
+        } catch (Exception e) {
+            System.out.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
             
-            System.out.println("No valid deviceId found, redirecting to /home");
-            response.sendRedirect("/home");
-        };
-    }
+            // Fallback to web redirect
+            response.setContentType("text/html");
+            response.getWriter().write(
+                "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><title>Error</title></head>" +
+                "<body style='font-family: Arial; text-align: center; padding: 50px;'>" +
+                "<h2 style='color: red;'>❌ Error</h2>" +
+                "<p>Authentication failed. Please try again.</p>" +
+                "<p>Error: " + e.getMessage() + "</p>" +
+                "</body>" +
+                "</html>"
+            );
+        }
+    };
+}
 }
