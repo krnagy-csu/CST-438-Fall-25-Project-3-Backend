@@ -10,4 +10,9 @@ class Cst438P3ApplicationTests {
 	void contextLoads() {
 	}
 
+	@Test
+	void temp(){
+		
+	}
+
 }

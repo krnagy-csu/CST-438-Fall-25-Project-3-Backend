@@ -1,10 +1,18 @@
 package com.example.CST438_P3;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import java.time.LocalDateTime;
+import java.util.Set;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import com.example.CST438_P3.repo.*;
+import com.example.CST438_P3.model.*;
 
 @RestController
 public class RouteController {
+	private GroupRepository groupRepo;
+	private UserRepository userRepo;
 
 	//The default route given with Springboot
 	@GetMapping("/")
@@ -18,9 +26,36 @@ public class RouteController {
 	 * @return an error code or status message
 	 */
 	@GetMapping("/createGroup")
-	public String createGroup() {
-		return "This is the route for creating groups!";
+	public String createGroup(
+        @RequestParam("name") String name,
+        @RequestParam(value = "description", required = false) String description,
+        @RequestParam("activityType") String activityType,
+        @RequestParam("zipCode") String zipCode,
+        @RequestParam(value = "maxMembers", required = false) Integer maxMembers,
+        @RequestParam(value = "eventDate", required = false) String eventDateIso, // e.g. 2025-11-12T15:00:00
+        @RequestParam(value = "isRecurring", required = false) Boolean isRecurring,
+        @RequestParam("creatorId") Long creatorId
+	){
+    	User creator = userRepo.findById(creatorId).orElse(null);
+    	if (creator == null) {
+        	return "Invalid creator ID";
+    	}
+
+    	Group g = new Group(name, description, activityType, zipCode, creator);
+    	if (maxMembers != null) g.setMaxMembers(maxMembers);
+    	if (isRecurring != null) g.setIsRecurring(isRecurring);
+    	if (eventDateIso != null && !eventDateIso.isBlank()) {
+        	try {
+            	g.setEventDate(LocalDateTime.parse(eventDateIso));
+        	} catch (Exception e) {
+            	return "Invalid date";
+        	}
+    	}
+    	g.setUpdatedAt(LocalDateTime.now());
+
+    	return "Success";
 	}
+
 
 	/**
 	 * This will eventually be the route that tells the database to delete groups
@@ -28,8 +63,16 @@ public class RouteController {
 	 * @return the number of rows affected
 	 */
 	@GetMapping("/deleteGroup")
-	public String deleteGroup() {
-		return "This is the route for deleting groups!";
+	public String deleteGroup(
+		@RequestParam ("Group ID") Long groupId
+	) {
+		Group target = groupRepo.findById(groupId).orElse(null);
+		if (target == null){
+			return "Failed to find group";
+		}
+		groupRepo.delete(target);
+		return "Success!";
+		//probably want to add *some* degree of security but eh, that's a stretch goal
 	}
 
 	/**
@@ -60,8 +103,26 @@ public class RouteController {
 	 * @return the IDs of the user and group affected, and whether they were added to the waitlist or the group directly.
 	 */
 	@GetMapping("/joinGroup")
-	public String joinGroup() {
-		return "This is the route for adding a user to a group!";
+	public String joinGroup(
+		@RequestParam("User ID") Long userID,
+		@RequestParam("Group ID") Long groupID
+	) {
+		User user = userRepo.findById(userID).orElse(null);
+		if (user == null){
+			return "Failed to get user.";
+		}
+		Group group = groupRepo.findById(groupID).orElse(null);
+		if (group == null){
+			return "Failed to get group.";
+		}
+		Set<User> temp = group.getMembers();
+		temp.add(user);
+		group.setMembers(temp);
+		if (group.getMembers().contains(user)){
+			return "Success!";
+		} else {
+			return "An error occured";
+		}
 	}
 
 	/**
@@ -71,9 +132,25 @@ public class RouteController {
 	 * @return either a success or error code
 	 */
 	@GetMapping ("/leaveGroup")
-	public String leaveGroup() {
-		return "This is the route for leaving a group.";
-	}
+	public String leaveGroup(
+		@RequestParam("User ID") Long userID,
+		@RequestParam("Group ID") Long groupID
+	) {
+		User user = userRepo.findById(userID).orElse(null);
+		if (user == null){
+			return "Failed to get user.";
+		}
+		Group group = groupRepo.findById(groupID).orElse(null);
+		if (group == null){
+			return "Failed to get group.";
+		}
+		group.removeMember(user);
+		
+		if (!group.getMembers().contains(user)){
+			return "Success!";
+		} else {
+			return "An error occured";
+		}	}
 
 	/**
 	 * This will eventually be the route to add timeslots to a group.
