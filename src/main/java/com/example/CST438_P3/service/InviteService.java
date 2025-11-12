@@ -40,7 +40,7 @@ public class InviteService {
             throw new RuntimeException("User is already a member of the group");
         }
 
-        Optional<Invite> existingInvite = inviteRepository.findByGroupIdAndInviteeId(groupId, inviteeId, InviteStatus.PENDING);
+        Optional<Invite> existingInvite = inviteRepository.findByGroupIdAndInviteeIdAndStatus(groupId, inviteeId, InviteStatus.PENDING);
         if(existingInvite.isPresent()){
             throw new RuntimeException("An invite is already pending for this user to join the group");
         }
@@ -52,7 +52,7 @@ public class InviteService {
     //all of the below functions will be for
     //operations that haven't been created yet
     //on the frontend
-    
+
     public Invite acceptInvite(Long inviteId){
         Invite invite = inviteRepository.findById(inviteId)
                 .orElseThrow(() -> new RuntimeException("Invite not found"));

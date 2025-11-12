@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // Disable for API
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/", "/login**", "/error", "/auth/**", "/oauth2/**").permitAll()
+                .requestMatchers("/", "/login**", "/error", "/auth/**", "/oauth2/**",  "/api/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
