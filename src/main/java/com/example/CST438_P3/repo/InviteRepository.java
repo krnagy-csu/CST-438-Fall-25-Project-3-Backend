@@ -20,5 +20,5 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
     List<Invite> findByInviterId(Long inviterId);
 
     //Will prevent duplicate/spam invites
-    Optional<Invite> findByGroupIdAndInviteeId(Long groupId, Long inviteeId, InviteStatus status);
+    Optional<Invite> findByGroupIdAndInviteeIdAndStatus(Long groupId, Long inviteeId, InviteStatus status);
 }
