@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import com.example.CST438_P3.repo.UserRepository;
+import com.example.CST438_P3.model.User;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
@@ -26,6 +28,14 @@ public class SecurityConfig {
 
     @Autowired
     private GoogleAuthController googleAuthController;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private String generateUsernameFromEmail(String email) {
+        if (email == null) return null;
+        return email.split("@")[0];
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -55,14 +65,29 @@ public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
         
         try {
             // Generate JWT
-            String jwt = jwtTokenProvider.generateToken(email);
-            
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("email", email);
-            userMap.put("name", name);
-            userMap.put("picture", picture);
-            userMap.put("id", email);
-            
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> {
+                        String username = generateUsernameFromEmail(email);
+
+                        User newUser = new User(
+                            username,       // username from email prefix
+                            email,          // email from Google
+                            "OAUTH_USER",   // placeholder password
+                            null            // zipCode (can be set later)
+                        );
+                        return userRepository.save(newUser);
+                    });
+
+                // 🔹 2) Generate JWT (same as before)
+                String jwt = jwtTokenProvider.generateToken(email);
+                
+                // 🔹 3) Build userMap with REAL DB id
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", user.getId());        // ✅ DB id
+                userMap.put("email", user.getEmail());
+                userMap.put("username", user.getUsername());
+                userMap.put("name", name);
+                userMap.put("picture", picture);
             OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
             
             // Store with a special "latest" key that the frontend will poll
