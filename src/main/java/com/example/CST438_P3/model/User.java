@@ -29,6 +29,9 @@ public class User {
 
     @OneToMany(mappedBy = "creator")
     private Set<Group> createdGroups = new HashSet<>();
+   
+    protected User() {
+    }
 
     public User(String username, String email, String password, String zipCode) {
         this.username = username;
