@@ -47,3 +47,10 @@ jar {
 bootJar {
 	enabled = true
 }
+
+test {
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+        showStandardStreams = true
+    }
+}
