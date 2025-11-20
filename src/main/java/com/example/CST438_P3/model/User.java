@@ -3,6 +3,7 @@ package com.example.CST438_P3.model;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "users")
@@ -25,9 +26,11 @@ public class User {
     private String zipCode;
 
     @ManyToMany(mappedBy = "members")
+    @JsonManagedReference("user-groups")
     private Set<Group> groups = new HashSet<>();
 
     @OneToMany(mappedBy = "creator")
+    @JsonManagedReference("user-createdGroups")
     private Set<Group> createdGroups = new HashSet<>();
    
     protected User() {
