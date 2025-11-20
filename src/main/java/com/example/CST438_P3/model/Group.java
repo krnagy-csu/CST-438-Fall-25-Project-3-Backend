@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 
 @Entity
 @Table(name = "groups")
@@ -42,6 +44,7 @@ public class Group {
 
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
+    @JsonBackReference("user-createdGroups")
     private User creator;
 
 
@@ -54,6 +57,7 @@ public class Group {
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
 
+    @JsonBackReference("user-groups")
     private Set<User> members = new HashSet<>();
 
    
