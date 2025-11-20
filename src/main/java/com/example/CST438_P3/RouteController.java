@@ -13,6 +13,7 @@ import com.example.CST438_P3.model.*;
 public class RouteController {
 	private GroupRepository groupRepo;
 	private UserRepository userRepo;
+	private NotificationRepository notifRepo;
 
 	//The default route given with Springboot
 	@GetMapping("/")
@@ -79,6 +80,17 @@ public class RouteController {
 	 * Editing a group's tags
 	 * Input is the number of tags followed by the strings for the tags themselves
 	 * @return the number of tags added
+	 * Groups have a max of 5 tags
+	 * Theoretically, the ideal would be:
+	 * 	group owner goes to group;
+	 * 	group owner enters a tag;
+	 * 	if (numTags < 5) {
+	 * 		tag is added;
+	 * 	} else {
+	 * 		tag isn't added, warns user "too many tags remove one to add another";
+	 * 	}
+	 * 	also maybe some kind of vaildation so people don't just tag their groups with swears
+	 * 	but that's only a concern if this ever actually goes to prod lol
 	 */
 	@GetMapping("/addTags")
 	public String addTags() {
@@ -104,8 +116,8 @@ public class RouteController {
 	 */
 	@GetMapping("/joinGroup")
 	public String joinGroup(
-		@RequestParam("User ID") Long userID,
-		@RequestParam("Group ID") Long groupID
+		@RequestParam("userID") Long userID,
+		@RequestParam("groupID") Long groupID
 	) {
 		User user = userRepo.findById(userID).orElse(null);
 		if (user == null){
@@ -133,8 +145,8 @@ public class RouteController {
 	 */
 	@GetMapping ("/leaveGroup")
 	public String leaveGroup(
-		@RequestParam("User ID") Long userID,
-		@RequestParam("Group ID") Long groupID
+		@RequestParam("userID") Long userID,
+		@RequestParam("groupID") Long groupID
 	) {
 		User user = userRepo.findById(userID).orElse(null);
 		if (user == null){
@@ -152,6 +164,32 @@ public class RouteController {
 			return "An error occured";
 		}	}
 	
+	@GetMapping ("/sendNotif")
+	public String sendNotification(
+		@RequestParam("senderID") Long senderId,
+		@RequestParam("recipientID") Long recipientId,
+		@RequestParam("relatedGroup") Long groupId,
+		@RequestParam("title") String title,
+		@RequestParam("body") String body
+	){
+		User sender = userRepo.findById(senderId).orElse(null);
+		User recipient = userRepo.findById(recipientId).orElse(null);
+		Group relatedGroup = groupRepo.findById(groupId).orElse(null);
+		Notification notif = new Notification(recipient,title,body);
+
+		//doing != null because these are not required (i hope) (if they are i'll change it)
+		if (sender != null){
+			notif.setSender(sender);
+		}
+		if (relatedGroup != null){
+			notif.setGroup(relatedGroup);
+		}
+		
+		notif.setDate(LocalDateTime.now());
+
+		return "";
+	}
+
 	/**
 	 * This will eventually be the route to add timeslots to a group.
 	 * I'm still not sure how this will functionally work; this may need to be split up into multiple routes.
@@ -172,4 +210,7 @@ public class RouteController {
 		return "This is the route from removing timeslots from a group.";
 	}
 	//Will refrain from making user routes for now pending Oauth implementation on frontend
+	//Oauth implementation is no longer pending lmao time for user routes
+
+	
 }
