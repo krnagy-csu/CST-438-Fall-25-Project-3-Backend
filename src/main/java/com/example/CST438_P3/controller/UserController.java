@@ -1,16 +1,16 @@
 package com.example.CST438_P3.controller;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
-import com.example.CST438_P3.model.User;     
-import com.example.CST438_P3.repo.UserRepository;
-
-import com.example.CST438_P3.repo.UserRepository;
-
 import java.util.Map;
+
+import com.example.CST438_P3.model.User;
+import com.example.CST438_P3.repo.UserRepository;
 
 @RestController
 public class UserController {
@@ -18,54 +18,49 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-
     @GetMapping("/home")
     public Map<String, Object> user(@AuthenticationPrincipal OAuth2User principal) {
         return Map.of(
-            "name", principal.getAttribute("name"),
-            "email", principal.getAttribute("email"),
-            "picture", principal.getAttribute("picture")
+                "name", principal.getAttribute("name"),
+                "email", principal.getAttribute("email"),
+                "picture", principal.getAttribute("picture")
         );
     }
+
     @GetMapping("/api/users")
     public List<User> getAllUsers() {
-        return userRepository.findAll();  // ← This shows H2 or Postgres users
+        return userRepository.findAll();
     }
 
-  @GetMapping("/api/users/me")
-public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
+    @GetMapping("/api/users/me")
+    public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
 
-    if (principal == null) {
-        throw new RuntimeException("No OAuth user found");
+        if (principal == null) {
+            throw new RuntimeException("No OAuth user found.");
+        }
+
+        // Try all possible Google email keys
+        String email1 = principal.getAttribute("email");
+        String email2 = principal.getAttribute("emailAddress");
+
+        final String resolvedEmail = (email1 != null) ? email1 : email2;
+        if (resolvedEmail == null) {
+            throw new RuntimeException("Email not provided by OAuth provider");
+        }
+
+        // Return existing user if found
+        User existing = userRepository.findByEmail(resolvedEmail).orElse(null);
+        if (existing != null) return existing;
+
+        // Create new user
+        String name = principal.getAttribute("name");
+
+        User newUser = new User();
+        newUser.setEmail(resolvedEmail);
+        newUser.setUsername(name != null ? name : resolvedEmail);
+        newUser.setPassword("OAUTH_USER");
+        newUser.setZipCode(null);
+
+        return userRepository.save(newUser);
     }
-
-    String email = principal.getAttribute("email");
-    if (email == null) {
-        email = principal.getAttribute("emailAddress");
-    }
-    if (email == null) {
-        throw new RuntimeException("Email not provided by OAuth provider");
-    }
-
-    String name = principal.getAttribute("name");
-
-    
-    final String emailOauth = email;
-    final String nameOauth = (name != null ? name : email);
-
-    return userRepository.findByEmail(email)
-            .orElseGet(() -> {
-                User newUser = new User();
-                newUser.setEmail(emailOauth);
-                newUser.setUsername(nameOauth);
-
-                newUser.setPassword("OAUTH_USER");
-                newUser.setZipCode(null);
-
-                return userRepository.save(newUser);
-            });
-}
-
-
-
 }
