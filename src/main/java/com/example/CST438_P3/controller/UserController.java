@@ -39,28 +39,25 @@ public class UserController {
             throw new RuntimeException("No OAuth user found.");
         }
 
-        // Try all possible Google email keys
-        String email1 = principal.getAttribute("email");
+        // Try both keys just in case
+        String email = principal.getAttribute("email");
         String email2 = principal.getAttribute("emailAddress");
 
-        final String resolvedEmail = (email1 != null) ? email1 : email2;
+        final String resolvedEmail = (email != null) ? email : email2;
         if (resolvedEmail == null) {
             throw new RuntimeException("Email not provided by OAuth provider");
         }
 
-        // Return existing user if found
-        User existing = userRepository.findByEmail(resolvedEmail).orElse(null);
-        if (existing != null) return existing;
+        return userRepository.findByEmail(resolvedEmail).orElseGet(() -> {
+            String name = principal.getAttribute("name");
 
-        // Create new user
-        String name = principal.getAttribute("name");
+            User newUser = new User();
+            newUser.setEmail(resolvedEmail);
+            newUser.setUsername(name != null ? name : resolvedEmail);
+            newUser.setPassword("OAUTH_USER");
+            newUser.setZipCode(null);
 
-        User newUser = new User();
-        newUser.setEmail(resolvedEmail);
-        newUser.setUsername(name != null ? name : resolvedEmail);
-        newUser.setPassword("OAUTH_USER");
-        newUser.setZipCode(null);
-
-        return userRepository.save(newUser);
+            return userRepository.save(newUser);
+        });
     }
 }
