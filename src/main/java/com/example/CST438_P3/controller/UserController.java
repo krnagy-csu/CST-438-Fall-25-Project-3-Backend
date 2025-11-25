@@ -31,7 +31,8 @@ public class UserController {
     public List<User> getAllUsers() {
         return userRepository.findAll();  // ← This shows H2 or Postgres users
     }
-   @GetMapping("/api/users/me")
+
+  @GetMapping("/api/users/me")
 public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
 
     if (principal == null) {
@@ -46,14 +47,17 @@ public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
         throw new RuntimeException("Email not provided by OAuth provider");
     }
 
-    //if user exists
+    String name = principal.getAttribute("name");
+
+    
+    final String emailOauth = email;
+    final String nameOauth = (name != null ? name : email);
+
     return userRepository.findByEmail(email)
             .orElseGet(() -> {
-                //if not, create a new user automatically
                 User newUser = new User();
-                newUser.setEmail(email);
-                String name = principal.getAttribute("name");
-                newUser.setUsername(name != null ? name : email);
+                newUser.setEmail(emailOauth);
+                newUser.setUsername(nameOauth);
 
                 newUser.setPassword("OAUTH_USER");
                 newUser.setZipCode(null);
@@ -61,6 +65,7 @@ public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
                 return userRepository.save(newUser);
             });
 }
+
 
 
 }
