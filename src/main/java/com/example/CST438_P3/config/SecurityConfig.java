@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import com.example.CST438_P3.repo.UserRepository;
 import com.example.CST438_P3.model.User;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,21 +32,19 @@ public class SecurityConfig {
     private UserRepository userRepository;
 
     private String generateUsernameFromEmail(String email) {
-        if (email == null) return null;
-        return email.split("@")[0];
+        return email != null ? email.split("@")[0] : null;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authorize -> authorize
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login**", "/error",
-                                "/auth/**", "/oauth2/**", "/api/**")
-                        .permitAll()
+                                "/auth/**", "/oauth2/**", "/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2.successHandler(mobileOAuth2SuccessHandler()));
+                .oauth2Login(oauth -> oauth.successHandler(mobileOAuth2SuccessHandler()));
 
         return http.build();
     }
@@ -56,13 +55,18 @@ public class SecurityConfig {
 
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-            // Read deviceId from OAuth2 "state" parameter
-            String deviceId = request.getParameter("state");
+        
+            String encoded = request.getParameter("state");
+            String deviceId;
 
-            if (deviceId == null || deviceId.isEmpty()) {
-                System.out.println("⚠️ WARNING: state (deviceId) missing. Using fallback 'latest'.");
-                deviceId = "latest";
+            try {
+                deviceId = new String(Base64.getDecoder().decode(encoded));
+            } catch (Exception e) {
+                System.out.println("⚠️ Invalid Base64 state, fallback to raw");
+                deviceId = encoded;
             }
+
+            System.out.println("📌 OAuth callback for deviceId = " + deviceId);
 
             String email = oAuth2User.getAttribute("email");
             String name = oAuth2User.getAttribute("name");
@@ -73,14 +77,13 @@ public class SecurityConfig {
                 User user = userRepository.findByEmail(email)
                         .orElseGet(() -> {
                             String username = generateUsernameFromEmail(email);
-                            User newUser = new User(username, email, "OAUTH_USER", null);
-                            return userRepository.save(newUser);
+                            return userRepository.save(new User(username, email, "OAUTH_USER", null));
                         });
 
                 // Generate JWT
                 String jwt = jwtTokenProvider.generateToken(email);
 
-                // Build user map for frontend
+                // Build user map
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("id", user.getId());
                 userMap.put("email", user.getEmail());
@@ -88,28 +91,24 @@ public class SecurityConfig {
                 userMap.put("name", name);
                 userMap.put("picture", picture);
 
-                // Update correct device so polling works
-                OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
-                googleAuthController.updateDeviceState(deviceId, successState);
+                // Store success state
+                OAuthState success = new OAuthState("SUCCESS", jwt, userMap, null);
+                googleAuthController.updateDeviceState(deviceId, success);
 
                 System.out.println("✅ OAuth SUCCESS stored for deviceId: " + deviceId);
 
-                // Show success page
+                // Success page
                 response.setContentType("text/html");
                 response.getWriter().write(
-                        "<!DOCTYPE html>" +
-                                "<html><head><title>Success</title>" +
-                                "<meta http-equiv='refresh' content='2;url=about:blank'>" +
-                                "</head>" +
-                                "<body style='font-family: Arial; text-align:center; padding:40px;'>" +
-                                "<h2 style='color:green;'>Login Successful</h2>" +
-                                "<p>You may now close this window.</p>" +
+                        "<html><body style='text-align:center;padding:50px;font-family:Arial'>" +
+                                "<h2 style='color:green;'>Success!</h2>" +
+                                "<p>You can close this window.</p>" +
                                 "<script>setTimeout(()=>{window.close();},1500);</script>" +
                                 "</body></html>"
                 );
 
             } catch (Exception e) {
-                System.out.println("❌ OAuth Error: " + e.getMessage());
+                System.out.println("❌ OAuth error: " + e.getMessage());
                 response.sendRedirect("/error");
             }
         };

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,20 +18,18 @@ public class GoogleAuthController {
     @Value("${app.backend-url:http://localhost:8080}")
     private String backendUrl;
 
-
     private final Map<String, OAuthState> deviceStates = new ConcurrentHashMap<>();
-
 
     @GetMapping("/start")
     public ResponseEntity<?> startGoogleAuth(@RequestParam String deviceId) {
 
-     
+        // Save WAITING state
         deviceStates.put(deviceId, new OAuthState("WAITING", null, null, null));
 
-   
+        // Forward encoded deviceId to Google
         String googleAuthUrl =
-                "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/oauth2/authorization/google?state=" 
-                + deviceId;
+                "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/oauth2/authorization/google?state=" +
+                        deviceId;
 
         Map<String, Object> response = new HashMap<>();
         response.put("url", googleAuthUrl);
@@ -38,8 +37,6 @@ public class GoogleAuthController {
 
         return ResponseEntity.ok(response);
     }
-
-
 
     @GetMapping("/status")
     public ResponseEntity<?> checkStatus(@RequestParam String deviceId) {
@@ -64,8 +61,6 @@ public class GoogleAuthController {
 
         return ResponseEntity.ok(response);
     }
-
-
 
     public void updateDeviceState(String deviceId, OAuthState state) {
         deviceStates.put(deviceId, state);
