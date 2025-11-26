@@ -20,21 +20,24 @@ public class GoogleAuthController {
     private final Map<String, OAuthState> deviceStates = new ConcurrentHashMap<>();
 
 
+
     @GetMapping("/start")
-public ResponseEntity<?> startGoogleAuth(@RequestParam String deviceId) {
+    public ResponseEntity<?> startGoogleAuth(@RequestParam String deviceId) {
 
-    deviceStates.put(deviceId, new OAuthState("WAITING", null, null, null));
+    
+        deviceStates.put(deviceId, new OAuthState("WAITING", null, null, null));
 
-    String googleAuthUrl =
-            "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/oauth2/authorization/google?deviceId=" 
-            + deviceId;
+ 
+        String googleAuthUrl =
+                "https://cst438-p3-backend-de9dd99b3c9a.herokuapp.com/oauth2/authorization/google?state="
+                        + deviceId;
 
-    Map<String, Object> response = new HashMap<>();
-    response.put("url", googleAuthUrl);
-    response.put("deviceId", deviceId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("url", googleAuthUrl);
+        response.put("deviceId", deviceId);
 
-    return ResponseEntity.ok(response);
-}
+        return ResponseEntity.ok(response);
+    }
 
 
     @GetMapping("/status")

@@ -50,19 +50,18 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
         return (request, response, authentication) -> {
 
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-    
-            String deviceId = request.getParameter("deviceId");
+            // Read deviceId from OAuth2 "state" parameter
+            String deviceId = request.getParameter("state");
 
             if (deviceId == null || deviceId.isEmpty()) {
-                System.out.println("⚠️ deviceId missing from callback. Using fallback 'latest'");
-                deviceId = "latest";  // fallback (but real logins will always include deviceId)
+                System.out.println("⚠️ WARNING: state (deviceId) missing. Using fallback 'latest'.");
+                deviceId = "latest";
             }
 
             String email = oAuth2User.getAttribute("email");
@@ -70,7 +69,7 @@ public class SecurityConfig {
             String picture = oAuth2User.getAttribute("picture");
 
             try {
-          
+                // Find or create user
                 User user = userRepository.findByEmail(email)
                         .orElseGet(() -> {
                             String username = generateUsernameFromEmail(email);
@@ -78,10 +77,10 @@ public class SecurityConfig {
                             return userRepository.save(newUser);
                         });
 
-      
+                // Generate JWT
                 String jwt = jwtTokenProvider.generateToken(email);
 
-             
+                // Build user map for frontend
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("id", user.getId());
                 userMap.put("email", user.getEmail());
@@ -89,24 +88,24 @@ public class SecurityConfig {
                 userMap.put("name", name);
                 userMap.put("picture", picture);
 
-        
+                // Update correct device so polling works
                 OAuthState successState = new OAuthState("SUCCESS", jwt, userMap, null);
                 googleAuthController.updateDeviceState(deviceId, successState);
 
                 System.out.println("✅ OAuth SUCCESS stored for deviceId: " + deviceId);
 
-            
+                // Show success page
                 response.setContentType("text/html");
                 response.getWriter().write(
                         "<!DOCTYPE html>" +
-                        "<html><head><title>Success</title>" +
-                        "<meta http-equiv='refresh' content='2;url=about:blank'>" +
-                        "</head>" +
-                        "<body style='font-family: Arial; text-align:center; padding:40px;'>" +
-                        "<h2 style='color:green;'>Login Successful</h2>" +
-                        "<p>You may now close this window.</p>" +
-                        "<script>setTimeout(()=>{window.close();},1500);</script>" +
-                        "</body></html>"
+                                "<html><head><title>Success</title>" +
+                                "<meta http-equiv='refresh' content='2;url=about:blank'>" +
+                                "</head>" +
+                                "<body style='font-family: Arial; text-align:center; padding:40px;'>" +
+                                "<h2 style='color:green;'>Login Successful</h2>" +
+                                "<p>You may now close this window.</p>" +
+                                "<script>setTimeout(()=>{window.close();},1500);</script>" +
+                                "</body></html>"
                 );
 
             } catch (Exception e) {
