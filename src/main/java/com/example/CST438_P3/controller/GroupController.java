@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -133,6 +134,21 @@ public ResponseEntity<Map<String, Object>> getJoinedGroups(@PathVariable Long us
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
+
+@DeleteMapping("/{groupId}/leave/{userId}")
+public ResponseEntity<String> leaveGroup(
+        @PathVariable Long groupId,
+        @PathVariable Long userId) {
+
+    boolean success = groupService.leaveGroup(userId, groupId);
+    if (success) {
+        return ResponseEntity.ok("User left the group successfully");
+    } else {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Failed to leave the group");
+    }
+}
+
 
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchGroups(@RequestParam(required = false) String activityType,
