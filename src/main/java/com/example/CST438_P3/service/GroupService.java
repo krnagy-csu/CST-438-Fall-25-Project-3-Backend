@@ -81,5 +81,12 @@ public class GroupService {
     public List<Group> searchByZipCode(String zipCode){
         return groupRepository.findByZipCode(zipCode);
     }
+
+    public List<Group> getGroupsByUser(Long userId) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new Exception("User not found with id: " + userId));
+        
+        return groupRepository.findByMembersContaining(user);
+    }
         
 }

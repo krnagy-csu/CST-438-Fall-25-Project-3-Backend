@@ -119,6 +119,21 @@ public class GroupController {
         }
     }
 
+    @GetMapping("/user/{userId}/joined")
+public ResponseEntity<Map<String, Object>> getJoinedGroups(@PathVariable Long userId) {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        List<Group> groups = groupService.getGroupsByUser(userId);
+        response.put("status", "success");
+        response.put("groups", groups);
+        return ResponseEntity.ok(response);
+    } catch(Exception e){
+        response.put("status", "error");
+        response.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchGroups(@RequestParam(required = false) String activityType,
                                                             @RequestParam(required = false) String zipCode) {
