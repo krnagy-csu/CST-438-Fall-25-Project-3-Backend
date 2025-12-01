@@ -8,7 +8,7 @@ import com.example.CST438_P3.repo.GroupRepository;
 import com.example.CST438_P3.repo.UserRepository;
 import com.example.CST438_P3.model.User;
 import com.example.CST438_P3.model.Group;
-
+import java.util.Optional;
 
 
 
@@ -81,5 +81,30 @@ public class GroupService {
     public List<Group> searchByZipCode(String zipCode){
         return groupRepository.findByZipCode(zipCode);
     }
+
+    public List<Group> getGroupsByUser(Long userId) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new Exception("User not found with id: " + userId));
+        
+        return groupRepository.findByMembersContaining(user);
+    }
+
+    public boolean leaveGroup(Long userId, Long groupId) {
+        Optional<Group> groupOpt = groupRepository.findById(groupId);
+        Optional<User> userOpt = userRepository.findById(userId);
+    
+        if (groupOpt.isPresent() && userOpt.isPresent()) {
+            Group group = groupOpt.get();
+            User user = userOpt.get();
+    
+            if (group.getMembers().contains(user)) {
+                group.getMembers().remove(user);
+                groupRepository.save(group);
+                return true;
+            }
+        }
+        return false;
+    }
+    
         
 }
