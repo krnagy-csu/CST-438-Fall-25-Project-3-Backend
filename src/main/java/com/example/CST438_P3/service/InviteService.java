@@ -14,6 +14,8 @@ import com.example.CST438_P3.repo.UserRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.CST438_P3.dto.InviteDTO;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -104,4 +106,49 @@ public class InviteService {
                 .orElseThrow(() -> new RuntimeException("Invite not found"));
         inviteRepository.delete(invite);
     }
+
+    private InviteDTO convertToDTO(Invite invite){
+        InviteDTO dto = new InviteDTO();
+
+        dto.setId(invite.getId());
+        dto.setStatus(invite.getStatus());
+        dto.setCreatedAt(invite.getCreatedAt());
+        dto.setRespondedAt(invite.getRespondedAt());
+
+        Group group = invite.getGroup();
+        dto.setGroupId(group.getId());
+        dto.setGroupName(group.getName());
+        dto.setGroupDescription(group.getDescription());
+        dto.setInviteeUsername(invite.getInvitee().getUsername());
+        dto.setZipCode(group.getZipCode());
+        dto.setEventDate(group.getEventDate());
+        dto.setMaxMembers(group.getMaxMembers());
+        dto.setCurrentMemberCount(group.getCurrentMemberCount());
+
+        User inviter = invite.getInviter();
+        dto.setInviterId(inviter.getId());
+        dto.setInviterUsername(inviter.getUsername());
+        dto.setInviterEmail(inviter.getEmail());
+
+        User invitee = invite.getInvitee();
+        dto.setInviteeId(invitee.getId());
+        dto.setInviteeUsername(invitee.getUsername());
+
+        return dto;
+    }
+
+    public List<InviteDTO> getUserInvitesDTO(Long userId){
+        List<Invite> invites = inviteRepository.findByInviteeId(userId);
+        return invites.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<InviteDTO> getPendingInvitesDTO(Long userId){
+        List<Invite> invites = inviteRepository.findByInviteeIdAndStatus(userId, InviteStatus.PENDING);
+        return invites.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
 }
