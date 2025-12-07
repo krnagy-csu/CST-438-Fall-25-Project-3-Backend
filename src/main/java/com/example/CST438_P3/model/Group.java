@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 
 @Entity
@@ -44,7 +45,7 @@ public class Group {
 
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
-    @JsonBackReference("user-createdGroups")
+    @JsonIgnoreProperties({"password", "groups", "createdGroups"})
     private User creator;
 
 
@@ -57,7 +58,7 @@ public class Group {
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
 
-    @JsonBackReference("user-groups")
+    @JsonIgnoreProperties({"password", "groups", "createdGroups"})
     private Set<User> members = new HashSet<>();
 
    
