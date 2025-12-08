@@ -34,6 +34,22 @@ public class GoogleAuthController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/github/start")
+    public ResponseEntity<?> startGithubAuth() {
+        // Reset latest state just like Google
+        deviceStates.remove("latest");
+        deviceStates.put("latest", new OAuthState("WAITING", null, null, null));
+
+        // Build the GitHub auth URL (use backendUrl like Google ideally)
+        String githubAuthUrl = backendUrl + "/oauth2/authorization/github";
+        System.out.println("Generated GitHub OAuth URL: " + githubAuthUrl);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("url", githubAuthUrl);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/status")
     public ResponseEntity<?> checkStatus() {
         // Always check the "latest" login
