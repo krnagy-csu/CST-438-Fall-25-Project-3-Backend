@@ -11,6 +11,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
+
 import com.example.CST438_P3.repo.UserRepository;
 import com.example.CST438_P3.model.User;
 import jakarta.servlet.http.HttpSession;
@@ -51,6 +56,46 @@ public class SecurityConfig {
         
         return http.build();
     }
+
+      @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Allow local versions of the frontend to have accesss
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:8081",           // Expo web dev
+            "http://localhost:19006",          // Alternative Expo port
+            "http://localhost:3000",           // Common React port
+            "exp://localhost:8081",            // Expo scheme
+            "https://your-production-url.com"  // frontend heroku app
+        ));
+        
+        // Allow all common HTTP methods
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+        ));
+        
+        // Allow all headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Allow credentials (cookies, authorization headers)
+        configuration.setAllowCredentials(true);
+        
+        // Cache preflight response for 1 hour
+        configuration.setMaxAge(3600L);
+        
+        // Expose these headers to the client
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type"
+        ));
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // Apply to all endpoints
+        return source;
+    }
+
+
     @Bean
 public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
     return (request, response, authentication) -> {
