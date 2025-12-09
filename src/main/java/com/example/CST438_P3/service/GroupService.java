@@ -9,6 +9,7 @@ import com.example.CST438_P3.repo.UserRepository;
 import com.example.CST438_P3.model.User;
 import com.example.CST438_P3.model.Group;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 
@@ -49,6 +50,7 @@ public class GroupService {
         }
 
         group.setUpdatedAt(LocalDateTime.now());
+        group.getMembers().add(creator); // Add creator as the first member
 
         return groupRepository.save(group);
     }
@@ -106,5 +108,14 @@ public class GroupService {
         return false;
     }
     
+    public List<String> getUniqueActivityTypes() {
+        return groupRepository.findAll().stream()
+                .map(Group::getActivityType)
+                .filter(type -> type != null && !type.trim().isEmpty())
+                .map(String::trim)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
         
 }

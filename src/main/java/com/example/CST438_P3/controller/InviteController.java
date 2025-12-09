@@ -16,6 +16,7 @@ import com.example.CST438_P3.model.Invite;
 import com.example.CST438_P3.service.InviteService;
 import java.util.Map;
 import java.util.List;
+import com.example.CST438_P3.dto.InviteDTO;
 
 import jakarta.persistence.criteria.CriteriaBuilder.In;
 
@@ -46,6 +47,7 @@ public class InviteController {
             response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
     }
 
 
@@ -54,6 +56,73 @@ public class InviteController {
     public ResponseEntity<List<Invite>> getPendingInvites(@PathVariable Long userId) {
         List<Invite> invites = inviteService.getPendingInvites(userId);
         return ResponseEntity.ok(invites);
+    }
+
+
+    }  
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Map<String, Object>> getUserInvites(@PathVariable Long userId){
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<InviteDTO> invites = inviteService.getUserInvitesDTO(userId);
+            response.put("status", "success");
+            response.put("invites", invites);
+            response.put("count", invites.size());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @GetMapping("/user/{userId}/pending")
+    public ResponseEntity<Map<String, Object>> getPendingInvites(@PathVariable Long userId){
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<InviteDTO> invites = inviteService.getPendingInvitesDTO(userId);
+            response.put("status", "success");
+            response.put("invites", invites);
+            response.put("count", invites.size());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PutMapping("/{inviteId}/accept")
+    public ResponseEntity<Map<String, Object>> acceptInvite(@PathVariable Long inviteId){
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Invite invite = inviteService.acceptInvite(inviteId);
+            response.put("status", "success");
+            response.put("message", "Invite accepted successfully");
+            response.put("invite", invite);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PutMapping("/{inviteId}/decline")
+    public ResponseEntity<Map<String, Object>> declineInvite(@PathVariable Long inviteId){
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Invite invite = inviteService.declineInvite(inviteId);
+            response.put("status", "success");
+            response.put("message", "Invite declined successfully");
+            response.put("invite", invite);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
 
 }

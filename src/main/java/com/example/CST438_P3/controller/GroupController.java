@@ -176,4 +176,21 @@ public ResponseEntity<String> leaveGroup(
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    @GetMapping("/activity-types")
+    public ResponseEntity<Map<String, Object>> getActivityType(){
+        Map<String, Object> response = new HashMap<>();
+
+        try{
+            List<String> activityTypes = groupService.getUniqueActivityTypes();
+            response.put("status", "success");
+            response.put("activityTypes", activityTypes);
+            response.put("count", activityTypes.size());
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 }
