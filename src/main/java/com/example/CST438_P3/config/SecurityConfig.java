@@ -11,13 +11,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.Arrays;
-import java.util.List;
-
-
 import com.example.CST438_P3.repo.UserRepository;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
@@ -49,7 +42,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // Disable for API
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/login**", "/error", "/auth/**", "/oauth2/**",  "/api/**").permitAll()
@@ -61,28 +53,6 @@ public class SecurityConfig {
         
         return http.build();
     }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Allow frontend origin (localhost:8081 for now)
-        configuration.setAllowedOrigins(List.of("http://localhost:8081"));
-        
-        // Allow standard HTTP methods
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
-        // Allow headers (Authorization is crucial for your JWT)
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        
-        // Allow credentials (cookies/auth headers)
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
     @Bean
 public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
     return (request, response, authentication) -> {
