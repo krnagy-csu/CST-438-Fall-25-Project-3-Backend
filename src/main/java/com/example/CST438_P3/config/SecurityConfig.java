@@ -44,6 +44,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // Disable for API
+            .cors(cors -> {})
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/", "/login**", "/error", "/auth/**", "/oauth2/**",  "/api/**").permitAll()
@@ -55,6 +56,23 @@ public class SecurityConfig {
         
         return http.build();
     }
+
+    @Bean
+public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+    org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+
+    config.addAllowedOriginPattern("*"); // OR list specific origins
+    config.addAllowedMethod("*");
+    config.addAllowedHeader("*");
+    config.setAllowCredentials(true);
+
+    org.springframework.web.cors.UrlBasedCorsConfigurationSource source =
+        new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+}
+
+
     @Bean
 public AuthenticationSuccessHandler mobileOAuth2SuccessHandler() {
     return (request, response, authentication) -> {
