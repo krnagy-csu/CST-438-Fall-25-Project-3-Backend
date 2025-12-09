@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import com.example.CST438_P3.repo.UserRepository;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.http.HttpMethod;
 
 import com.example.CST438_P3.model.User;
 import jakarta.servlet.http.HttpSession;
@@ -44,6 +45,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // Disable for API
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/", "/login**", "/error", "/auth/**", "/oauth2/**",  "/api/**").permitAll()
                 .anyRequest().authenticated()
             )
