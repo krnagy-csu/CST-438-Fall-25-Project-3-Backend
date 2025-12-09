@@ -20,7 +20,6 @@ import com.example.CST438_P3.repo.UserRepository;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class UserController {
 
     @Autowired

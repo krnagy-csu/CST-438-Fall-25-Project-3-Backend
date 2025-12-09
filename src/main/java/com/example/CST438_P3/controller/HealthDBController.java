@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class HealthDBController {
     
 @Autowired

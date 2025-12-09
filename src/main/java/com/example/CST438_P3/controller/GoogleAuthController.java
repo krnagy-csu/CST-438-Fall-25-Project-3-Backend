@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/auth/google")
-@CrossOrigin(origins = "*")
 public class GoogleAuthController {
 
     @Value("${app.backend-url:http://localhost:8080}")
