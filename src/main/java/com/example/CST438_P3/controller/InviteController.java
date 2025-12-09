@@ -47,6 +47,18 @@ public class InviteController {
             response.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
+    }
+
+
+ 
+    @GetMapping("/user/{userId}/pending")
+    public ResponseEntity<List<Invite>> getPendingInvites(@PathVariable Long userId) {
+        List<Invite> invites = inviteService.getPendingInvites(userId);
+        return ResponseEntity.ok(invites);
+    }
+
+
     }  
     
     @GetMapping("/user/{userId}")
@@ -112,4 +124,5 @@ public class InviteController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
 }

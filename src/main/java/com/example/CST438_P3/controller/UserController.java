@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import com.example.CST438_P3.security.JwtTokenProvider;  
@@ -46,6 +47,12 @@ public User getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
     return userRepository.findByEmail(email).orElseThrow();
 }
 
+
+@GetMapping("/api/users/username/{username}")
+public User getUserByUsername(@PathVariable String username) {
+    return userRepository.findByUsername(username)
+        .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+
 @GetMapping("/api/users/me-jwt-test")
 public User getCurrentUserJwtTest(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
@@ -76,5 +83,6 @@ public User getCurrentUserJwtTest(HttpServletRequest request) {
             HttpStatus.NOT_FOUND,
             "User not found: " + email
         ));
+
 }
 }
