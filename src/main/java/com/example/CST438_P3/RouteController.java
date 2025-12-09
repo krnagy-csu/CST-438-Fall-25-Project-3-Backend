@@ -10,6 +10,7 @@ import com.example.CST438_P3.repo.*;
 import com.example.CST438_P3.model.*;
 
 @RestController
+@CrossOrigin(origins = "*")
 public class RouteController {
 	private GroupRepository groupRepo;
 	private UserRepository userRepo;
